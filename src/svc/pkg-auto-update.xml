@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<!--
+  CDDL HEADER START
+
+  The contents of this file are subject to the terms of the
+  Common Development and Distribution License (the "License").
+  You may not use this file except in compliance with the License.
+
+  You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+  or http://www.opensolaris.org/os/licensing.
+  See the License for the specific language governing permissions
+  and limitations under the License.
+
+  When distributing Covered Code, include this CDDL HEADER in each
+  file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+  If applicable, add the following below this CDDL HEADER, with the
+  fields enclosed by brackets "[]" replaced with your own identifying
+  information: Portions Copyright [yyyy] [name of copyright owner]
+
+  CDDL HEADER END
+
+  Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+
+  NOTE:  This service manifest is not editable; its contents will
+  be overwritten by package or patch operations, including
+  operating system upgrade.  Make customizations in a different
+  file.
+-->
+
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+
+<service_bundle type='manifest' name='system/auto-update'>
+
+<service
+    name='system/auto-update'
+    type='service'
+    version='1'>
+
+        <restarter>
+                <service_fmri value='svc:/system/svc/periodic-restarter:default'
+                />
+        </restarter>
+
+	<dependency
+	    name='required_dependencies'
+	    grouping='require_all'
+	    restart_on='none'
+	    type='service'>
+		<service_fmri value='svc:/milestone/multi-user:default' />
+		<service_fmri value='svc:/system/filesystem/local' />
+		<service_fmri value='svc:/milestone/self-assembly-complete' />
+                <service_fmri value='svc:/milestone/name-services:default' />
+                <service_fmri value='svc:/milestone/network:default' />
+	</dependency>
+
+
+	<instance name='default' enabled='false'>
+		<scheduled_method
+			interval='day'
+			hour='3'
+			minute='0'
+			recover='true'
+			exec='/lib/svc/method/svc-pkg-auto-update %m'
+			timeout_seconds='0'>
+			    <method_context>
+				<method_credential trusted_path='true'
+					user='root' group='root' />
+			    </method_context>
+		</scheduled_method>
+		<property_group type='application' name='config'>
+			<propval type='boolean' name='auto-reboot' value='false' />
+			<propval type='boolean' name='require-new-be' value='false' />
+			<propval type='boolean' name='activate-new-be' value='true' />
+			<propval type='boolean' name='backup-be' value='true' />
+			<property name='packages' type='astring'>
+				<!-- Set an empty value so it is visible with editprop -->
+				<astring_list>
+					<value_node value='' />
+				</astring_list>
+			</property>
+			<propval type='astring' name='reboot-check-hook' value='' />
+			<propval type='count' name='shutdown-grace-period' value='60' />
+		</property_group>
+
+		<template>
+			<common_name>
+				<loctext xml:lang='C'>
+					Automatic Package Update Service
+				</loctext>
+			</common_name>
+		</template>
+	</instance>
+
+	<instance name='cleanup' enabled='false'>
+
+		<scheduled_method
+			interval='day'
+			hour='0'
+			minute='0'
+			recover='true'
+			exec='/lib/svc/method/svc-pkg-auto-update-cleanup %m'
+			timeout_seconds='0'>
+			    <method_context>
+				<method_credential trusted_path='true'
+					user='root' group='root' />
+			    </method_context>
+		</scheduled_method>
+		<property_group type='application' name='config'>
+			<propval type='integer' name='keep' value='6' />
+		</property_group>
+		<template>
+			<common_name>
+				<loctext xml:lang='C'>
+					Automatic Boot Environment Cleanup
+				</loctext>
+			</common_name>
+		</template>
+	</instance>
+
+</service>
+
+</service_bundle>
